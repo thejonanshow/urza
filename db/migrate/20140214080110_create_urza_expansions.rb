@@ -5,7 +5,7 @@ class CreateUrzaExpansions < ActiveRecord::Migration
       t.string :abbreviation
       t.date :release_date
       t.string :border
-      t.string :type
+      t.string :set_type
 
       t.timestamps
     end
