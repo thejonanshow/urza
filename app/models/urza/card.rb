@@ -8,5 +8,9 @@ module Urza
     has_and_belongs_to_many :subtypes
     has_many :card_variations
     has_many :variations, :through => :card_variations
+
+    def image_path
+      File.join(Rails.root, 'tmp', 'images', "#{multiverse_id}.jpg")
+    end
   end
 end
