@@ -1,4 +1,5 @@
 require 'json'
+require 'phashion'
 
 desc "Open a console with Urza"
 task :console do
@@ -15,6 +16,21 @@ task :download do
   end
 
   File.write('all_sets.json', open("http://mtgjson.com/json/AllSets.json", :progress_proc => progress).read)
+end
+
+desc "Save fingerprints for all card images"
+task :fingerprints => :environment do
+  count = Urza::Card.count
+  Urza::Card.all.each_with_index do |card, index|
+    if card.fingerprint
+      puts "#{index}/#{count}: Skipping #{card.full_name}"
+      next
+    end
+
+    fingerprint = Phashion::Image.new(card.image_path).fingerprint.to_s
+    card.update_attributes(fingerprint: fingerprint)
+    puts "#{index}/#{count}: Updated fingerprint for #{card.full_name}"
+  end
 end
 
 desc "Download card images to tmp/images"

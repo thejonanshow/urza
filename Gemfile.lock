@@ -1,10 +1,19 @@
+GIT
+  remote: git@github.com:docwhat/lego_nxt.git
+  revision: 52fdd85d7daeacd5fea936bc44a204cd240be1e5
+  specs:
+    lego_nxt (1.0.0)
+      libusb (~> 0.4)
+      music (~> 0.7)
+
 PATH
   remote: .
   specs:
     urza (0.0.1)
+      av_capture
       phashion
       rails (~> 4.0.0)
-      rb_webcam
+      rmagick
 
 GEM
   remote: https://rubygems.org/
@@ -35,12 +44,15 @@ GEM
       tzinfo (~> 0.3.37)
     arel (4.0.2)
     atomic (1.1.14)
+    av_capture (1.0.0)
     builder (3.1.4)
     coderay (1.1.0)
     erubis (2.7.0)
     ffi (1.9.3)
     hike (1.2.3)
     i18n (0.6.9)
+    libusb (0.4.0)
+      ffi (>= 1.0)
     mail (2.5.4)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
@@ -48,8 +60,7 @@ GEM
     mime-types (1.25.1)
     minitest (4.7.5)
     multi_json (1.8.4)
-    nice-ffi (0.4)
-      ffi (>= 0.5.0)
+    music (0.7.0)
     phashion (1.0.6)
     polyglot (0.3.3)
     pry (0.9.12.6)
@@ -73,8 +84,7 @@ GEM
       rake (>= 0.8.7)
       thor (>= 0.18.1, < 2.0)
     rake (10.1.1)
-    rb_webcam (0.3.0)
-      nice-ffi (>= 0.3)
+    rmagick (2.13.2)
     slop (3.4.7)
     sprockets (2.10.1)
       hike (~> 1.2)
@@ -99,6 +109,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  lego_nxt!
   pry
   sqlite3
   urza!
