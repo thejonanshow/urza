@@ -1,0 +1,27 @@
+--- !ruby/object:Urza::Card
+attributes:
+  id: 22677
+  layout: normal
+  full_name: Rakdos Ragemutt
+  mana_cost: "{3}{B}{R}"
+  cmc: 5.0
+  card_type: Creature — Elemental Hound
+  rarity: Uncommon
+  text: Lifelink, haste
+  flavor_text: Ragemutts pull the chariots of the Butcher Clowns, a trio of wingless,
+    zombified faeries formerly of the Izzet.
+  artist: Ryan Barger
+  number: '185'
+  power: '3'
+  toughness: '3'
+  loyalty: 
+  multiverse_id: 290525
+  image_name: rakdos ragemutt
+  watermark: Rakdos
+  border: 
+  hand: 
+  life: 
+  created_at: 2014-02-15 06:32:54.758150000 Z
+  updated_at: 2014-02-18 02:08:42.440021000 Z
+  expansion_id: 113
+  fingerprint: '1818300065787691455'
