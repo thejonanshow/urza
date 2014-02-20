@@ -3,8 +3,18 @@ require 'lego_nxt'
 module Urza
   class Bot
     attr_reader :brick
+    attr_accessor :config
 
     def initialize(brick = nil)
+      @config = {
+        :default_motor_duration => 1,
+        :light_timeout => 3,
+        :light_threshold => 7,
+        :dispense_retries => 3,
+        :sort_motor => :a,
+        :dispense_motor => :b,
+        :eject_motor => :c
+      }
       begin
         @brick = brick || LegoNXT::LowLevel.connect
       rescue
@@ -12,16 +22,45 @@ module Urza
       end
     end
 
-    def run_motor_for_duration(motor, speed = 100, duration = 1)
-      self.brick.run_motor(:c, speed)
+    def run_motor_for_duration(motor, speed = 100, duration = config[:default_motor_duration])
+      self.brick.run_motor(motor, speed)
       sleep duration
-      self.brick.stop_motor(:c)
+      self.brick.stop_motor(motor)
     end
 
-    def eject(pause = 0.3)
-      self.brick.run_motor_for_duration(:c, -60, 0.5)
+    def eject(pause = config[:eject_pause])
+      self.brick.run_motor_for_duration(config[:eject_motor], -60, 0.5)
       sleep pause
-      self.brick.run_motor_for_duration(:c, 60, 0.5)
+      self.brick.run_motor_for_duration(config[:eject_motor], 60, 0.5)
+    end
+
+    def wait_for_light_change(timeout = self.config[:light_timeout])
+      starting_time = Time.now
+      light = starting_light = self.brick.light_sensor(1)
+
+      while (Time.now - starting_time) < timeout && (light - starting_light < config[:light_threshold])
+        light = self.brick.light_sensor(1)
+      end
+
+      if light - starting_light >= config[:light_threshold]
+        true
+      else
+        false
+      end
+    end
+
+    def dispense(retries = self.config[:dispense_retries])
+      return false unless retries > 0
+
+      self.brick.run_motor(config[:dispense_motor], -80)
+      success = wait_for_light_change
+      self.brick.stop_motor(config[:dispense_motor])
+
+      if success
+        true
+      else
+        dispense(retries - 1)
+      end
     end
   end
   class BotInitializationError < StandardError; end
