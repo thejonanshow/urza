@@ -1,18 +1,45 @@
 require 'phashion'
 require 'rmagick'
+require 'av_capture'
 
 module Urza
   class Scan
     attr_reader :path, :phashion_image, :magick_image
 
-    def initialize(image_path)
-      @path = image_path
+    def initialize(image_path = nil)
+      @path = image_path || capture
       load_images
     end
 
     def load_images
       @phashion_image = Phashion::Image.new(self.path)
       @magick_image = Magick::Image::read(self.path).first
+    end
+
+    def capture
+      session = AVCapture::Session.new # AVCaptureSession
+      dev = AVCapture.devices.find(&:video?) # AVCaptureDevice
+      filename = "tmp/urza_scan.jpg"
+
+      output = AVCapture::StillImageOutput.new # AVCaptureOutput subclass
+      session.add_input dev.as_input
+      session.add_output output
+
+      session.run do
+        connection = output.video_connection
+
+        ios = 1.times.map {
+          io = output.capture_on connection
+          sleep 0.5
+          io
+        }
+
+        ios.each_with_index do |io, i|
+          File.open("tmp/urza_scan.jpg", 'wb') { |f| f.write io.data }
+        end
+
+        filename = "tmp/urza_scan.jpg"
+      end
     end
 
     def fingerprint
