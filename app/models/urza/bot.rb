@@ -13,7 +13,8 @@ module Urza
         :dispense_retries => 3,
         :sort_motor => :a,
         :dispense_motor => :b,
-        :eject_motor => :c
+        :eject_motor => :c,
+        :eject_pause => 0.1
       }
       begin
         @brick = brick || LegoNXT::LowLevel.connect
@@ -29,9 +30,9 @@ module Urza
     end
 
     def eject(pause = config[:eject_pause])
-      self.brick.run_motor_for_duration(config[:eject_motor], -60, 0.5)
+      run_motor_for_duration(config[:eject_motor], -60, 0.5)
       sleep pause
-      self.brick.run_motor_for_duration(config[:eject_motor], 60, 0.5)
+      run_motor_for_duration(config[:eject_motor], 60, 0.5)
     end
 
     def wait_for_light_change(timeout = self.config[:light_timeout])
@@ -51,9 +52,11 @@ module Urza
 
     def dispense(retries = self.config[:dispense_retries])
       return false unless retries > 0
+      eject
 
       self.brick.run_motor(config[:dispense_motor], -80)
       success = wait_for_light_change
+      sleep 0.2
       self.brick.stop_motor(config[:dispense_motor])
 
       if success

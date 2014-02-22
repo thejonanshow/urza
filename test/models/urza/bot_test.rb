@@ -14,8 +14,8 @@ module Urza
     end
 
     def test_eject_runs_motor_c_for_half_a_second_at_60
-      @fake_brick.expect(:run_motor_for_duration, nil, [:c, -60, 0.5])
-      @fake_brick.expect(:run_motor_for_duration, nil, [:c, 60, 0.5])
+      @fake_brick.expect(:run_motor, nil, [:c, -60])
+      @fake_brick.expect(:run_motor, nil, [:c, 60])
       @bot.eject(0)
     end
 

@@ -13,7 +13,7 @@ module Urza
       FileUtils.rm('tmp/rakdos_ragemutt.jpg')
     end
 
-    def _test_crop_refreshes_a_scans_fingerprint
+    def test_crop_refreshes_a_scans_fingerprint
       old_print = @scan.fingerprint
       @scan.crop(:top, 5)
 
