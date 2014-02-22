@@ -4,7 +4,8 @@ require 'av_capture'
 
 module Urza
   class Scan
-    attr_reader :path, :phashion_image, :magick_image
+    attr_reader :phashion_image, :magick_image
+    attr_accessor :path
 
     def initialize(image_path = nil)
       @path = image_path || capture
@@ -74,7 +75,7 @@ module Urza
       end
     end
 
-    def calibrate_crop_edge(edge, fingerprint)
+    def calculate_crop_edge(edge, fingerprint)
       hamming_distances = {}
       current_crop = 0
 
@@ -87,6 +88,7 @@ module Urza
       while current_crop < max_crop
         crop(edge, 5)
         current_crop += 5
+        puts "Working with #{self.path}" if ENV['DEBUG']
         puts "Cropped #{current_crop} from the #{edge} so far out of #{max_crop}" if ENV['DEBUG']
 
         hamming_distance = Phashion.hamming_distance(self.phashion_image.fingerprint, fingerprint)
@@ -94,6 +96,26 @@ module Urza
       end
 
       hamming_distances.sort.first.last
+    end
+
+    def calculate_crop_edges(fingerprint)
+      edges = {
+        :top => nil,
+        :right => nil,
+        :bottom => nil,
+        :left => nil
+      }
+      edges.keys.each do |edge|
+        self.magick_image.write("tmp/calculate_#{edge}_crop.jpg")
+      end
+
+      edges.keys.each do |edge|
+        self.path = "tmp/calculate_#{edge}_crop.jpg"
+        load_images
+        edges[edge] = calculate_crop_edge(edge, fingerprint)
+      end
+
+      edges
     end
   end
 end

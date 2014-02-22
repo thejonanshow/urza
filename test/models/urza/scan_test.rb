@@ -48,25 +48,37 @@ module Urza
       assert_equal old_width - 10, @scan.width
     end
 
-    if ENV['TEST_CALIBRATE']
-      def test_calibrate_crop_edge_returns_the_pixels_to_crop_from_the_top
-        result = @scan.calibrate_crop_edge(:top, @card.fingerprint.to_i)
+    if ENV['TEST_SLOW']
+      def test_calculate_crop_edge_returns_the_pixels_to_crop_from_the_top
+        result = @scan.calculate_crop_edge(:top, @card.fingerprint.to_i)
         assert_equal 75, result
       end
 
-      def test_calibrate_crop_edge_returns_the_pixels_to_crop_from_the_right
-        result = @scan.calibrate_crop_edge(:right, @card.fingerprint.to_i)
+      def test_calculate_crop_edge_returns_the_pixels_to_crop_from_the_right
+        result = @scan.calculate_crop_edge(:right, @card.fingerprint.to_i)
         assert_equal 30, result
       end
 
-      def test_calibrate_crop_edge_returns_the_pixels_to_crop_from_the_bottom
-        result = @scan.calibrate_crop_edge(:bottom, @card.fingerprint.to_i)
+      def test_calculate_crop_edge_returns_the_pixels_to_crop_from_the_bottom
+        result = @scan.calculate_crop_edge(:bottom, @card.fingerprint.to_i)
         assert_equal 15, result
       end
 
-      def test_calibrate_crop_edge_returns_the_pixels_to_crop_from_the_left
-        result = @scan.calibrate_crop_edge(:left, @card.fingerprint.to_i)
+      def test_calculate_crop_edge_returns_the_pixels_to_crop_from_the_left
+        result = @scan.calculate_crop_edge(:left, @card.fingerprint.to_i)
         assert_equal 35, result
+      end
+
+      def test_calculate_crop_edges_returns_the_pixels_to_crop_from_each_edge
+        expected = {
+          :top => 75,
+          :right => 30,
+          :bottom => 15,
+          :left => 35
+        }
+
+        result = @scan.calculate_crop_edges(@card.fingerprint.to_i)
+        assert_equal expected, result
       end
     end
 
