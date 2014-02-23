@@ -23,6 +23,43 @@ module Urza
       end
     end
 
+    def learn
+      dispense
+      sleep 1
+      s = Urza::Scan.new
+      s.crop_edges
+      s.preview
+      distances = Urza::Fingerprint.hamming_distances(s.fingerprint)
+
+      card = nil
+      response = each_result(distances) do |hamming_distance, card_id|
+        loop do
+          card = Urza::Card.find(card_id)
+          puts "Is it #{card.full_name} from #{card.expansion.name}? (y/n/i(nput)/s(kip)"
+          puts "Image: #{card.image_path}"
+          case resp = gets.strip
+          when 'y', 's', 'i'
+            break(resp)
+          when 'n'
+            break
+          end
+        end
+      end
+
+      card.fingerprints.create(phash: s.fingerprint.to_s) if response == 'y'
+    end
+
+    def each_result(distances)
+      sorted = distances.keys.sort
+
+      sorted.each do |hamming_distance|
+        distances[hamming_distance].each do |card_id|
+          result = yield hamming_distance, card_id
+          return result if result
+        end
+      end
+    end
+
     def run_motor_for_duration(motor, speed = 100, duration = config[:default_motor_duration])
       self.brick.run_motor(motor, speed)
       sleep duration

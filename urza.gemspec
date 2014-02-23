@@ -18,7 +18,6 @@ Gem::Specification.new do |spec|
   spec.test_files = Dir["test/**/*"]
 
   spec.add_dependency "rails", "~> 4.0.0"
-  spec.add_dependency "phashion"
   spec.add_dependency "av_capture"
   spec.add_dependency "rmagick"
   spec.add_development_dependency "sqlite3"

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140218012927) do
+ActiveRecord::Schema.define(version: 20140222215345) do
 
   create_table "urza_basictypes", force: true do |t|
     t.string   "name"
@@ -91,6 +91,13 @@ ActiveRecord::Schema.define(version: 20140218012927) do
     t.date     "release_date"
     t.string   "border"
     t.string   "set_type"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "urza_fingerprints", force: true do |t|
+    t.integer  "card_id"
+    t.string   "phash"
     t.datetime "created_at"
     t.datetime "updated_at"
   end

@@ -20,17 +20,35 @@ end
 
 desc "Save fingerprints for all card images"
 task :fingerprints => :environment do
+  queue = Queue.new
   count = Urza::Card.count
-  Urza::Card.all.each_with_index do |card, index|
-    if card.fingerprint
-      puts "#{index}/#{count}: Skipping #{card.full_name}"
-      next
-    end
-
-    fingerprint = Phashion::Image.new(card.image_path).fingerprint.to_s
-    card.update_attributes(fingerprint: fingerprint)
-    puts "#{index}/#{count}: Updated fingerprint for #{card.full_name}"
+  write_queue = Queue.new
+  Urza::Card.all.each do |card|
+    queue << card
   end
+
+  8.times { queue << nil }
+
+  write_thread = Thread.new do
+    while job = write_queue.pop
+      card, fingerprint = job.first, job.last
+      card.fingerprints.where(phash: fingerprint).first_or_create
+      puts '.'
+    end
+  end
+
+  8.times.map {
+    Thread.new do
+      while card = queue.pop
+        fingerprint = Phashion::Image.new(card.image_path).fingerprint.to_s
+        write_queue << [card, fingerprint]
+        puts queue.length
+      end
+    end
+  }.map(&:join)
+
+  write_queue << nil
+  write_thread.join
 end
 
 desc "Download card images to tmp/images"

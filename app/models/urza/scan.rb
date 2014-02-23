@@ -7,14 +7,27 @@ module Urza
     attr_reader :phashion_image, :magick_image
     attr_accessor :path
 
+    CROP_EDGES = {
+      :top=>357,
+      :bottom=>255,
+      :left=>284,
+      :right=>210
+    }
+
     def initialize(image_path = nil)
       @path = image_path || capture
+      load_images
+      self.magick_image.rotate(-90).write(self.path)
       load_images
     end
 
     def load_images
       @phashion_image = Phashion::Image.new(self.path)
       @magick_image = Magick::Image::read(self.path).first
+    end
+
+    def preview
+      `open #{self.path}`
     end
 
     def capture
@@ -69,10 +82,14 @@ module Urza
       self.magick_image.rows
     end
 
-    def crop_edges(edge_pixels)
+    def crop_edges(edge_pixels = nil)
+      edge_pixels ||= CROP_EDGES
+
       edge_pixels.each do |edge, pixels|
         crop(edge, pixels)
       end
+
+      self
     end
 
     def calculate_crop_edge(edge, fingerprint)
@@ -99,6 +116,8 @@ module Urza
     end
 
     def calculate_crop_edges(fingerprint)
+      original_path = self.path
+
       edges = {
         :top => nil,
         :right => nil,
@@ -115,6 +134,7 @@ module Urza
         edges[edge] = calculate_crop_edge(edge, fingerprint)
       end
 
+      self.path = original_path
       edges
     end
   end
