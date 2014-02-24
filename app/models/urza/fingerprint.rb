@@ -5,16 +5,11 @@ module Urza
     belongs_to :card
 
     def self.hamming_distances(new_fingerprint)
-      distances = {}
+      distances = Hash.new { |h,k| h[k] = [] }
 
       Fingerprint.all.each do |known_fingerprint|
         hamming = Phashion.hamming_distance(new_fingerprint.to_i, known_fingerprint.to_i)
-
-        if stored = distances[hamming]
-          distances[hamming] = stored << known_fingerprint.card_id
-        else
-          distances[hamming] = []
-        end
+        distances[hamming] << known_fingerprint.card_id
       end
 
       distances

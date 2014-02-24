@@ -23,23 +23,34 @@ module Urza
       end
     end
 
-    def learn
-      dispense
+    def learn(do_not_advance = nil)
+      dispense unless do_not_advance
       sleep 1
       s = Urza::Scan.new
       s.crop_edges
       s.preview
       distances = Urza::Fingerprint.hamming_distances(s.fingerprint)
 
+      name_filter = nil
       card = nil
       response = each_result(distances) do |hamming_distance, card_id|
         loop do
           card = Urza::Card.find(card_id)
+
+          if name_filter
+            matched = card.full_name.downcase.match(/^#{name_filter.downcase}/)
+            break unless matched
+          end
+
           puts "Is it #{card.full_name} from #{card.expansion.name}? (y/n/i(nput)/s(kip)"
           puts "Image: #{card.image_path}"
+          puts "Hamming distance: #{hamming_distance}"
           case resp = gets.strip
-          when 'y', 's', 'i'
+          when 'y', 's'
             break(resp)
+          when 'i'
+            puts "Type the first few letters of the card name:"
+            name_filter = gets.strip
           when 'n'
             break
           end
