@@ -12,8 +12,8 @@ module Urza
         :light_threshold => 7,
         :dispense_retries => 3,
         :sort_motor => :a,
-        :dispense_motor => :b,
-        :eject_motor => :c,
+        :dispense_motor => :c,
+        :eject_motor => :b,
         :eject_pause => 0.1
       }
       begin
@@ -25,7 +25,6 @@ module Urza
 
     def learn(do_not_advance = nil)
       dispense unless do_not_advance
-      sleep 1
       s = Urza::Scan.new
       s.crop_edges
       s.preview
@@ -42,7 +41,13 @@ module Urza
             break unless matched
           end
 
-          puts "Is it #{card.full_name} from #{card.expansion.name}? (y/n/i(nput)/s(kip)"
+          if distances[hamming_distance].length == 1 && hamming_distance <= 6
+            puts "*** THIS IS #{card.full_name.upcase}! I KNOW THIS! ***"
+            puts "The hamming distance  is #{hamming_distance} so I'm pretty sure."
+            break 'y'
+          end
+
+          puts "Is it #{card.full_name} from #{card.expansion.name}? (y/n/i(nput)/s(kip)/u(ndo)/q(uit)"
           puts "Image: #{card.image_path}"
           puts "Hamming distance: #{hamming_distance}"
           case resp = gets.strip
@@ -53,11 +58,30 @@ module Urza
             name_filter = gets.strip
           when 'n'
             break
+          when 'u'
+            delete_last_fingerprint
+          when 'q'
+            exit
           end
         end
       end
 
       card.fingerprints.create(phash: s.fingerprint.to_s) if response == 'y'
+    end
+
+    def delete_last_fingerprint
+      fingerprint = Urza::Fingerprint.last
+      puts "You sure you want to delete the last fingerprint for #{fingerprint.card.full_name}? (y/n)"
+      resp = gets.strip
+      if resp == 'y'
+        fingerprint.destroy
+      else
+        puts "Phew, close one. Keeping the last fingerprint for #{fingerprint.card.full_name}."
+      end
+    end
+
+    def stop
+      self.brick.stop_motor(:all)
     end
 
     def each_result(distances)
@@ -78,9 +102,9 @@ module Urza
     end
 
     def eject(pause = config[:eject_pause])
-      run_motor_for_duration(config[:eject_motor], -60, 0.5)
+      run_motor_for_duration(config[:eject_motor], -60, 0.4)
       sleep pause
-      run_motor_for_duration(config[:eject_motor], 60, 0.5)
+      run_motor_for_duration(config[:eject_motor], 60, 0.4)
     end
 
     def wait_for_light_change(timeout = self.config[:light_timeout])
@@ -104,7 +128,7 @@ module Urza
 
       self.brick.run_motor(config[:dispense_motor], -80)
       success = wait_for_light_change
-      sleep 0.2
+      sleep 0.5
       self.brick.stop_motor(config[:dispense_motor])
 
       if success

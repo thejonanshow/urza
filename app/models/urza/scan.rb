@@ -8,10 +8,10 @@ module Urza
     attr_accessor :path
 
     CROP_EDGES = {
-      :top=>357,
-      :bottom=>255,
-      :left=>284,
-      :right=>210
+      :top => 456,
+      :bottom => 166,
+      :left => 216,
+      :right => 278
     }
 
     def initialize(image_path = nil)
@@ -32,7 +32,7 @@ module Urza
 
     def capture
       session = AVCapture::Session.new # AVCaptureSession
-      dev = AVCapture.devices.find(&:video?) # AVCaptureDevice
+      dev = AVCapture.devices.find { |device| device.name.match(/USB Camera/) } # AVCaptureDevice
       filename = "tmp/urza_scan.jpg"
 
       output = AVCapture::StillImageOutput.new # AVCaptureOutput subclass
