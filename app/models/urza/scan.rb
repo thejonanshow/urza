@@ -8,10 +8,10 @@ module Urza
     attr_accessor :path
 
     CROP_EDGES = {
-      :top => 456,
-      :bottom => 166,
-      :left => 216,
-      :right => 278
+      :top => 405,
+      :bottom => 165,
+      :left => 230,
+      :right => 240
     }
 
     def initialize(image_path = nil)

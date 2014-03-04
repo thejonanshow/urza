@@ -14,7 +14,8 @@ module Urza
         :sort_motor => :a,
         :dispense_motor => :c,
         :eject_motor => :b,
-        :eject_pause => 0.1
+        :eject_pause => 0.1,
+        :matching_hamming_distance => 6
       }
       begin
         @brick = brick || LegoNXT::LowLevel.connect
@@ -38,17 +39,75 @@ module Urza
       scan = prepare_scan
       distances_with_cards = Urza::Fingerprint.hamming_distances(scan.fingerprint, self.cards).sort
 
-      identify_card(distances_with_cards[0..2])
+      card = identify_card_by_lowest_hamming_distance(distances_with_cards.first)
+
+      unless card
+        card, fingerprint_count = identify_card_by_common_fingerprint(distances_with_cards[0..2])
+        card.fingerprints.create(phash: scan.fingerprint) if fingerprint_count && fingerprint_count > 5
+      end
+
+      unless card
+        card = identify_card_by_prompt(scan, distances_with_cards)
+        card.fingerprints.create(phash: scan.fingerprint) if card
+      end
     end
 
-    def identify_card(distances_with_cards)
+    def identify_card_by_lowest_hamming_distance(distance_with_cards)
+      distance, card = distance_with_cards.first, distance_with_cards.last.first
+
+      if distance <= config[:matching_hamming_distance]
+        puts "Detected using lowest hamming distance: #{card.full_name}" if card
+        card
+      else
+        nil
+      end
+    end
+
+    def identify_card_by_common_fingerprint(distances_with_cards)
       cards = distances_with_cards.map(&:last).flatten
       duplicate_count = cards.length - cards.uniq.length
 
-      if duplicate_count > 1
+      if duplicate_count > 2
         common_card = most_common_value(cards)
-        puts "This is #{common_card.full_name}" if common_card
+        puts "Detected using common fingerprint: #{common_card.full_name}" if common_card
+        return [common_card, duplicate_count]
+      else
+        false
       end
+    end
+
+    def identify_card_by_prompt(scan, distances_with_cards, name_filter = nil)
+      scan.preview unless name_filter
+
+      distances_with_cards.each do |distance_with_cards|
+        distance, cards = distance_with_cards.first, distance_with_cards.last
+
+        resp = cards.uniq.each do |card|
+          next if (name_filter && !card.full_name.match(/#{name_filter}/))
+
+          puts "Is it #{card.full_name} from #{card.expansion.name}? y/n/s(kip)/f(ilter)/q(uit)"
+          response = gets.strip
+          case response
+          when 'y'
+            break card
+          when 'n'
+            next
+          when 's'
+            return nil
+          when 'f'
+            puts "Enter the first few characters of the card name:"
+            name_filter = gets.strip
+            break 'redo'
+          when 'q'
+            exit
+          end
+        end
+
+        redo if resp == 'redo'
+        resp
+      end
+
+      nil
     end
 
     def most_common_value(array)
