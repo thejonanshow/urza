@@ -2,7 +2,7 @@ require 'lego_nxt'
 
 module Urza
   class Bot
-    attr_reader :brick
+    attr_reader :brick, :cards
     attr_accessor :config
 
     def initialize(brick = nil)
@@ -21,78 +21,44 @@ module Urza
       rescue
         raise BotInitializationError.new('Unable to connect to Lego NXT brick')
       end
+
+      @cards = Urza::Card.includes(:fingerprints).all.to_a
+      return nil
     end
 
-    def learn(do_not_advance = nil)
-      dispense unless do_not_advance
-      s = Urza::Scan.new
-      s.crop_edges
-      s.preview
-      distances = Urza::Fingerprint.hamming_distances(s.fingerprint)
-
-      name_filter = nil
-      card = nil
-      response = each_result(distances) do |hamming_distance, card_id|
-        loop do
-          card = Urza::Card.find(card_id)
-
-          if name_filter
-            matched = card.full_name.downcase.match(/^#{name_filter.downcase}/)
-            break unless matched
-          end
-
-          if distances[hamming_distance].length == 1 && hamming_distance <= 6
-            puts "*** THIS IS #{card.full_name.upcase}! I KNOW THIS! ***"
-            puts "The hamming distance  is #{hamming_distance} so I'm pretty sure."
-            break 'y'
-          end
-
-          puts "Is it #{card.full_name} from #{card.expansion.name}? (y/n/i(nput)/s(kip)/u(ndo)/q(uit)"
-          puts "Image: #{card.image_path}"
-          puts "Hamming distance: #{hamming_distance}"
-          case resp = gets.strip
-          when 'y', 's'
-            break(resp)
-          when 'i'
-            puts "Type the first few letters of the card name:"
-            name_filter = gets.strip
-          when 'n'
-            break
-          when 'u'
-            delete_last_fingerprint
-          when 'q'
-            exit
-          end
-        end
-      end
-
-      card.fingerprints.create(phash: s.fingerprint.to_s) if response == 'y'
+    def prepare_scan
+      scan = Urza::Scan.new
+      scan.crop_edges
+      scan.preview
+      scan
     end
 
-    def delete_last_fingerprint
-      fingerprint = Urza::Fingerprint.last
-      puts "You sure you want to delete the last fingerprint for #{fingerprint.card.full_name}? (y/n)"
-      resp = gets.strip
-      if resp == 'y'
-        fingerprint.destroy
-      else
-        puts "Phew, close one. Keeping the last fingerprint for #{fingerprint.card.full_name}."
+    def learn(dispense_new_card = true)
+      dispense if dispense_new_card
+      scan = prepare_scan
+      distances_with_cards = Urza::Fingerprint.hamming_distances(scan.fingerprint, self.cards).sort
+
+      identify_card(distances_with_cards[0..2])
+    end
+
+    def identify_card(distances_with_cards)
+      cards = distances_with_cards.map(&:last).flatten
+      duplicate_count = cards.length - cards.uniq.length
+
+      if duplicate_count > 1
+        common_card = most_common_value(cards)
+        puts "This is #{common_card.full_name}" if common_card
       end
+    end
+
+    def most_common_value(array)
+      array.group_by do |element|
+        element
+      end.values.max_by(&:size).first
     end
 
     def stop
       self.brick.stop_motor(:all)
-    end
-
-    def each_result(distances)
-      sorted = distances.keys.sort
-
-      sorted.each do |hamming_distance|
-        distances[hamming_distance].each do |card_id|
-          result = yield hamming_distance, card_id
-          return result if result
-        end
-      end
     end
 
     def run_motor_for_duration(motor, speed = 100, duration = config[:default_motor_duration])
